@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
-import { SALT_ROUND } from "../constants";
+import { SALT_ROUND } from "../constants.js";
+import jwt from 'jsonwebtoken';
+import {
+    ACCESS_TOKEN_SECRET,
+    ACCESS_TOKEN_EXPIRY,
+    REFRESH_TOKEN_SECRET,
+    REFRESH_TOKEN_EXPIRY
+} from '../utils/config.js';
 
 const userSchema = new mongoose.Schema(
     {
@@ -21,7 +28,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
         },
 
-        fullname: {
+        fullName: {
             type: String,
             lowercase: true,
             required: true,
@@ -68,6 +75,38 @@ userSchema.pre('save', async function(next){
 //method to compare password
 userSchema.methods.isPasswordMatch = async function(pass){
     return await bcrypt.compare(pass, this.password);
+}
+
+//method to generate access token
+userSchema.methods.generateAccessToken = function(){
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: ACCESS_TOKEN_EXPIRY
+        }
+    );
+}
+
+//method to generate refresh token
+userSchema.methods.generateRefreshToken = function(){
+    return jwt.sign(
+        {
+            _id: this._id,
+            email: this.email,
+            username: this.username,
+            fullName: this.fullName
+        },
+        REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: REFRESH_TOKEN_EXPIRY
+        }
+    );
 }
 
 export const User = mongoose.model('User', userSchema);
