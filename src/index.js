@@ -7,14 +7,14 @@ const port = PORT || 3000;
 connectDB()
 .then(() => {
     app.on('error', (error) => {
-        console.log(`ERROR : ${error}`);
+        console.log(`Server ERROR : ${error}`);
     });
 
-    app.listen(port, (req, res) => {
+    app.listen(port, () => {
         console.log(`Server started on ${port}`);
     });
 })
 .catch((err) => {
     console.log(`MongoDB connection failed : ${err}`);
-    
+    process.exit(1);
 });
