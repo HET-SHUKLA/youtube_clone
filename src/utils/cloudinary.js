@@ -25,7 +25,7 @@ export const uploadFile = async (localFilePath) => {
 
         //Remove locally saved file
         fs.unlinkSync(localFilePath);
-
+        
         return result.url;
     }catch(err){
         //Remove locally saved file
