@@ -1,6 +1,7 @@
 import { User } from "../models/user.model.js";
 import { createError } from "./apiError.js";
 import { asyncHandler } from "./asyncHandler.js";
+import { REFRESH_TOKEN_SECRET } from "./config.js";
 
 export const generateAccessAndRefreshToken = async (user) => {
     const access = await user.generateAccessToken();
@@ -16,7 +17,7 @@ export const refreshTokenHandler = asyncHandler(async (req, res) => {
         throw createError(401, 'Unauthorized');
     }
 
-    const decode = jwt.verify(refreshToken, ACCESS_TOKEN_SECRET);
+    const decode = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
 
     const user = await User.findById(decode._id).select('-password -watchHistory');
 
