@@ -3,13 +3,10 @@ import { createError } from '../utils/apiError.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
+import { SPECIAL_CHAR } from '../constants.js';
 
 const handleRegisterUser = asyncHandler (async (req, res) => {
     let {username, email, fullName, password} = req.body;
-
-    if (!username, !email, !fullName, !password){
-        throw createError(400, 'Fields can not be empty');
-    }
 
     username = (username.trim()).toLowerCase();
     email = (email.trim()).toLowerCase();
@@ -56,6 +53,16 @@ const handleRegisterUser = asyncHandler (async (req, res) => {
     return res.status(201).json(apiResponse(user));
 });
 
+const handleUserLogin = asyncHandler (async (req, res) => {
+    //user can be username or user email
+    const {user, password} = req.body;
+
+    //if(user.contains('@'))
+
+
+});
+
 export {
-    handleRegisterUser
+    handleRegisterUser,
+    handleUserLogin
 }
