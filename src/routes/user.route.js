@@ -1,11 +1,15 @@
 import { Router } from "express";
 import {
     handleRegisterUser,
-    handleUserLogin
+    handleUserLogin,
+    handleUserLogout
 } from '../controllers/user.controller.js';
 import {upload} from '../middlewares/multer.middleware.js';
 import { validateInput } from "../middlewares/validation.middleware.js";
-import { userValidationSchema } from "../validators/user.validator.js";
+import {
+    loginValidationSchema, 
+    registerValidationSchema
+} from "../validators/user.validator.js";
 
 const router = Router();
 
@@ -21,10 +25,15 @@ router.route('/register').post(
             maxCount: 1
         }
     ]),
-    validateInput(userValidationSchema),
+    validateInput(registerValidationSchema),
     handleRegisterUser
 );
 
-router.route('/login').post( handleUserLogin );
+router.route('/login').post(
+    validateInput(loginValidationSchema),
+    handleUserLogin
+);
+
+router.route('/logout').get( handleUserLogout );
 
 export default router;

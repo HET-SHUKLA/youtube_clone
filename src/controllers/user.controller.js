@@ -3,7 +3,13 @@ import { createError } from '../utils/apiError.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
-import { SPECIAL_CHAR } from '../constants.js';
+
+const generateAccessAndRefreshToken = async (user) => {
+    const access = await user.generateAccessToken();
+    const refresh = await user.generateRefreshToken();
+
+    return {access, refresh};
+}
 
 const handleRegisterUser = asyncHandler (async (req, res) => {
     let {username, email, fullName, password} = req.body;
@@ -57,12 +63,57 @@ const handleUserLogin = asyncHandler (async (req, res) => {
     //user can be username or user email
     const {user, password} = req.body;
 
-    //if(user.contains('@'))
+    //check if its an email
+    const isEmail = user.includes('@') ? true : false;
+    
+    let query;
 
+    if(isEmail){
+        query = {
+            email : user
+        }
+    } else {
+        query = {
+            username : user
+        }
+    }
+
+    //Finding user
+    const foundUser = await User.findOne(query).select('-watchHistory');
+    
+    if(!foundUser){
+        throw createError(404, 'User does not exist');
+    }
+
+    const isPasswordCorrect = await foundUser.isPasswordMatch(password);
+
+    if(!isPasswordCorrect){
+        throw createError(404, 'Password is incorrect');
+    }
+
+    const {access, refresh} = await generateAccessAndRefreshToken(foundUser);
+
+    //Saving refresh token into DB
+    foundUser.refreshToken = refresh;
+    foundUser.save({validateBeforeSave: false});
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+    }
+
+    return res.status(200)
+    .cookie('accessToken', access, {...cookieOptions, maxAge: 86400000})
+    .cookie('refreshToken', refresh, {...cookieOptions, maxAge: 604800000})
+    .json(apiResponse(access));
+});
+
+const handleUserLogout = asyncHandler(async (req, res) => {
 
 });
 
 export {
     handleRegisterUser,
-    handleUserLogin
+    handleUserLogin,
+    handleUserLogout
 }
