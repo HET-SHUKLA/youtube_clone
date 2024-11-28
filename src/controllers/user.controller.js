@@ -3,13 +3,8 @@ import { createError } from '../utils/apiError.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
+import { generateAccessAndRefreshToken } from '../utils/generateNewTokens.js';
 
-const generateAccessAndRefreshToken = async (user) => {
-    const access = await user.generateAccessToken();
-    const refresh = await user.generateRefreshToken();
-
-    return {access, refresh};
-}
 
 const handleRegisterUser = asyncHandler (async (req, res) => {
     let {username, email, fullName, password} = req.body;
@@ -105,11 +100,25 @@ const handleUserLogin = asyncHandler (async (req, res) => {
     return res.status(200)
     .cookie('accessToken', access, {...cookieOptions, maxAge: 86400000})
     .cookie('refreshToken', refresh, {...cookieOptions, maxAge: 604800000})
-    .json(apiResponse(access));
+    .json(apiResponse({'accessToken':access, 'refreshToken': refresh}));
 });
 
 const handleUserLogout = asyncHandler(async (req, res) => {
+    //Removing refreshToken from DB
+    await User.findByIdAndUpdate(
+        {
+            _id: req.user
+        },
+        {
+            $unset: {refreshToken: ''}
+        }
+    );
 
+    //Clearing cookie
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    
+    return res.status(200).json(apiResponse('Logged out succesfully'));
 });
 
 export {

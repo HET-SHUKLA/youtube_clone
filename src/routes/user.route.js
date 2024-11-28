@@ -10,6 +10,7 @@ import {
     loginValidationSchema, 
     registerValidationSchema
 } from "../validators/user.validator.js";
+import { authUser } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -34,6 +35,9 @@ router.route('/login').post(
     handleUserLogin
 );
 
-router.route('/logout').get( handleUserLogout );
+router.route('/logout').get(
+    authUser,
+    handleUserLogout
+);
 
 export default router;
