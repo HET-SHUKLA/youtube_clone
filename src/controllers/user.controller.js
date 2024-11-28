@@ -3,7 +3,9 @@ import { createError } from '../utils/apiError.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 import { uploadFile } from '../utils/cloudinary.js';
+import { REFRESH_TOKEN_SECRET } from '../utils/config.js';
 import { generateAccessAndRefreshToken } from '../utils/generateNewTokens.js';
+import jwt from 'jsonwebtoken';
 
 
 const handleRegisterUser = asyncHandler (async (req, res) => {
@@ -121,8 +123,37 @@ const handleUserLogout = asyncHandler(async (req, res) => {
     return res.status(200).json(apiResponse('Logged out succesfully'));
 });
 
+const handleRefreshToken = asyncHandler(async (req, res) => {
+    const {refreshToken} = req.cookies;
+
+    if(!refreshToken){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const decode = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decode._id).select('-password -watchHistory');
+
+    const {access, refresh} = await generateAccessAndRefreshToken(user);
+
+    //Saving refresh token into DB
+    user.refreshToken = refresh;
+    user.save({validateBeforeSave: false});
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+    }
+    
+    res.status(200)
+    .cookie('accessToken', access, {...cookieOptions, maxAge: 86400000})
+    .cookie('refreshToken', refresh, {...cookieOptions, maxAge: 604800000})
+    .json(apiResponse({'access': access, 'refresh': refresh}));
+});
+
 export {
     handleRegisterUser,
     handleUserLogin,
-    handleUserLogout
+    handleUserLogout,
+    handleRefreshToken
 }
