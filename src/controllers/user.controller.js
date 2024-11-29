@@ -151,9 +151,44 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
     .json(apiResponse({'access': access, 'refresh': refresh}));
 });
 
+const handleChangePassword = asyncHandler(async (req, res) => {
+    const {currentPassword, newPassword} = req.body;
+
+    if(!req.user){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const user = await User.findById(
+        {
+            _id: req.user
+        }
+    );
+
+    const isPassSame = await user.isPasswordMatch(currentPassword);
+
+    if(!isPassSame){
+        throw createError(404, 'Current Password does not match');
+    }
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false});
+
+    return res.status(200).json(apiResponse(user));
+});
+
+const handleGetCurrentUser = asyncHandler(async (req, res) => {
+    if(!req.user){
+        throw createError(401, 'No user exists');
+    }
+
+    return res.status(200).json(apiResponse(req.user));
+});
+
 export {
     handleRegisterUser,
     handleUserLogin,
     handleUserLogout,
-    handleRefreshToken
+    handleRefreshToken,
+    handleGetCurrentUser,
+    handleChangePassword
 }

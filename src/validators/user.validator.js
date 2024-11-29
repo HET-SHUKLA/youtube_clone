@@ -11,3 +11,9 @@ export const loginValidationSchema = Joi.object({
     user: Joi.required(),
     password: Joi.required()
 });
+
+export const changePasswordValidationSchema = Joi.object({
+    currentPassword: Joi.required(),
+    newPassword: Joi.string().min(8).required(),
+    confirmPassword: Joi.ref('newPassword').required()
+});
