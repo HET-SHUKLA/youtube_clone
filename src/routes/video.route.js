@@ -10,17 +10,16 @@ import {
 import {
     handleVideoUpload,
     handleVideoDelete,
-    handleVideoPrivate
+    handleVideoPrivate,
+    handleGetVideos
 } from '../controllers/video.controller.js';
 
 const router = Router();
 
 //at /api/v1/video
 
-//Middleware to auth users
-router.use(authUser);
-
 router.route('/upload').post(
+    authUser,
     upload.fields([
         {
             name: 'videoFile',
@@ -36,13 +35,19 @@ router.route('/upload').post(
 );
 
 router.route('/delete').delete(
+    authUser,
     validateInput(videoDeleteValidationSchema),
     handleVideoDelete
 );
 
 router.route('/private').patch(
+    authUser,
     validateInput(videoPrivateValidationSchema),
     handleVideoPrivate
 );
+
+router.route('/get').get(
+    handleGetVideos
+)
 
 export default router;
