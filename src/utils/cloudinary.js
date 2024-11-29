@@ -5,6 +5,7 @@ import {
     CLOUDINARY_API_SECRET
 } from '../utils/config.js';
 import fs from 'fs';
+import { createError } from './apiError.js';
 
 // Configuration
 cloudinary.config({ 
@@ -14,7 +15,7 @@ cloudinary.config({
 });
 
 export const uploadFile = async (localFilePath) => {
-    // Upload an image
+    // Upload an image/video
     
     try{
         if(!localFilePath) return false;
@@ -26,10 +27,10 @@ export const uploadFile = async (localFilePath) => {
         //Remove locally saved file
         fs.unlinkSync(localFilePath);
         
-        return result.url;
+        return result;
     }catch(err){
         //Remove locally saved file
         fs.unlinkSync(localFilePath);
-        console.log(err);
+        throw createError(500, 'Unable to upload video');
     }
 }

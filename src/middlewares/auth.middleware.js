@@ -4,6 +4,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ACCESS_TOKEN_SECRET } from "../utils/config.js";
 
 export const authUser = asyncHandler(async (req, res, next) => {
+    if(req.user){
+        return next();
+    }
+
     const {accessToken} = req.cookies;
 
     if(!accessToken){

@@ -38,9 +38,9 @@ const videoSchema = new mongoose.Schema(
             default: 0
         },
 
-        isPublished: {
+        isPrivate: {
             type: Boolean,
-            default: true
+            default: false
         },
     },
     {

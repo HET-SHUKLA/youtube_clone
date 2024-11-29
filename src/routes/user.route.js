@@ -24,11 +24,11 @@ const router = Router();
 router.route('/register').post(
     upload.fields([
         {
-            name: 'avatar',
+            name: 'coverImage',
             maxCount: 1
         },
         {
-            name: 'coverImage',
+            name: 'avatar',
             maxCount: 1
         }
     ]),
@@ -55,11 +55,17 @@ router.route('/current-user').get(
     handleGetCurrentUser
 );
 
+//TODO: add route to reset password by sending mail
+
 //User related operations routes
-router.route('/change-password').post(
+router.route('/change-password').patch(
     authUser,
     validateInput(changePasswordValidationSchema),
     handleChangePassword
 );
+
+//TODO: add route to update user details and images
+
+
 
 export default router;

@@ -28,7 +28,8 @@ const handleRegisterUser = asyncHandler (async (req, res) => {
 
     //validate avatar and coverImage
     const { avatar, coverImage } = req.files;
-
+    console.log(req.files);
+    
     let avatarResult, coverResult;
 
     if(avatar){
@@ -45,8 +46,8 @@ const handleRegisterUser = asyncHandler (async (req, res) => {
         email,
         fullName,
         password,
-        avatar: avatarResult || '',
-        coverImage: coverResult || ''
+        avatar: avatarResult.url || '',
+        coverImage: coverResult.url || ''
     });
 
     if(!user){
