@@ -4,7 +4,8 @@ import { validateInput } from "../middlewares/validation.middleware.js";
 import { authUser } from "../middlewares/auth.middleware.js";
 import {
     videoUploadValidationSchema,
-    videoPrivateValidationSchema
+    videoPrivateValidationSchema,
+    videoDeleteValidationSchema
 } from "../validators/video.validator.js";
 import {
     handleVideoUpload,
@@ -35,6 +36,7 @@ router.route('/upload').post(
 );
 
 router.route('/delete').delete(
+    validateInput(videoDeleteValidationSchema),
     handleVideoDelete
 );
 

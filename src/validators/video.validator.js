@@ -10,3 +10,7 @@ export const videoPrivateValidationSchema = Joi.object({
     videoId: Joi.string().required(),
     isPrivate: Joi.boolean().required()
 });
+
+export const videoDeleteValidationSchema = Joi.object({
+    videoId: Joi.string().required(),
+});

@@ -34,3 +34,25 @@ export const uploadFile = async (localFilePath) => {
         throw createError(500, 'Unable to upload video');
     }
 }
+
+export const deleteFile = async (cloudinaryUrl, resourceType = 'image') => {
+
+    if (!cloudinaryUrl) {
+        throw createError(404,'URL is required to delete a file from Cloudinary.');
+    }
+
+    const urlParts = cloudinaryUrl.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const publicId = fileName.substring(0, fileName.lastIndexOf('.'));
+
+    try {
+        const result = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType,
+        });
+
+        return result;
+    } catch (error) {
+        console.error('Failed to delete file from Cloudinary:', error);
+        throw error;
+    }
+};

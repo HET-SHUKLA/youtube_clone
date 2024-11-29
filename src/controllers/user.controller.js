@@ -28,7 +28,6 @@ const handleRegisterUser = asyncHandler (async (req, res) => {
 
     //validate avatar and coverImage
     const { avatar, coverImage } = req.files;
-    console.log(req.files);
     
     let avatarResult, coverResult;
 

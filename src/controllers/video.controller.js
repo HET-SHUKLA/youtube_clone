@@ -1,8 +1,9 @@
+import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
 import { createError } from "../utils/apiError.js";
 import { apiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadFile } from '../utils/cloudinary.js';
+import { deleteFile, uploadFile } from '../utils/cloudinary.js';
 
 const handleVideoUpload = asyncHandler(async (req, res) => {
     if(!req.user){
@@ -43,16 +44,18 @@ const handleVideoPrivate = asyncHandler( async (req, res) => {
     }
 
     const {isPrivate, videoId} = req.body;
-
-    const video = await Video.findByIdAndUpdate(
-        {
-            _id: videoId,
-            owner: req.user
-        },
-        {
-            $set: {isPrivate: isPrivate}
-        }
-    );
+    
+    const video = await Video.findOne({
+        _id: videoId,
+        owner: new mongoose.Types.ObjectId(req.user),
+    });
+    
+    if (!video) {
+        throw createError(401, 'Unauthorized');
+    }
+    
+    video.isPrivate = isPrivate;
+    await video.save();
 
     return res.status(200).json(apiResponse(video));
 });
@@ -61,6 +64,28 @@ const handleVideoDelete = asyncHandler( async (req, res) => {
     if(!req.user){
         throw createError(401, 'Unauthorized');
     }
+
+    const {videoId} = req.body;
+    
+    const video = await Video.findOne({
+        _id: videoId,
+        owner: new mongoose.Types.ObjectId(req.user),
+    });
+
+    if (!video) {
+        throw createError(401, 'Unauthorized');
+    }
+
+    await Video.deleteOne(
+        {
+            _id: videoId,
+        }
+    );
+
+    await deleteFile(video.videoFile, 'video');
+    await deleteFile(video.thumbnail);
+
+    return res.status(200).json(apiResponse('Data Deleted successfully'));
 });
 
 export {
