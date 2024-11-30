@@ -108,9 +108,35 @@ const handleGetVideos = asyncHandler( async (req, res) => {
     return res.status(200).json(apiResponse({'videos': videos, 'nextCursor': nextCursor}));
 });
 
+const handleGetVideoPage = asyncHandler(async (req, res) => {
+    const {page = 1, limit = 20} = req.query;
+
+    if(isNaN(page) || page < 1){
+        throw createError(400, 'Page must be a valid number');
+    }
+
+    const size = Math.min(Number(limit) || 20, 100);
+    const skip = Number((page-1)*size);
+
+    const videos = await Video.aggregate([
+        {
+            $sort: {createdAt: -1}
+        },
+        {
+            $skip: skip
+        },
+        {
+            $limit: size
+        },
+    ])
+
+    return res.status(200).json(apiResponse({'videos': videos}));
+});
+
 export {
     handleVideoUpload,
     handleVideoDelete,
     handleVideoPrivate,
-    handleGetVideos
+    handleGetVideos,
+    handleGetVideoPage
 }

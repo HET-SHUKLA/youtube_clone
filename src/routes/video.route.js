@@ -5,13 +5,14 @@ import { authUser } from "../middlewares/auth.middleware.js";
 import {
     videoUploadValidationSchema,
     videoPrivateValidationSchema,
-    videoDeleteValidationSchema
+    videoDeleteValidationSchema,
 } from "../validators/video.validator.js";
 import {
     handleVideoUpload,
     handleVideoDelete,
     handleVideoPrivate,
-    handleGetVideos
+    handleGetVideos,
+    handleGetVideoPage
 } from '../controllers/video.controller.js';
 
 const router = Router();
@@ -46,8 +47,14 @@ router.route('/private').patch(
     handleVideoPrivate
 );
 
+//With cursor
 router.route('/get').get(
     handleGetVideos
+);
+
+//With pagination
+router.route('/get/pages').get(
+    handleGetVideoPage
 )
 
 export default router;
