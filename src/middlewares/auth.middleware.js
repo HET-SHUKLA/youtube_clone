@@ -17,5 +17,6 @@ export const authUser = asyncHandler(async (req, res, next) => {
     const decode = jwt.verify(accessToken, ACCESS_TOKEN_SECRET);
 
     req.user = decode._id;
+    req.username = decode.username;
     next();
 });

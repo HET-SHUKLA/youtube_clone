@@ -41,6 +41,67 @@ const handleGetSubscribers = asyncHandler(async (req, res) => {
     return res.status(200).json(apiResponse({subcribers, totalDocuments}));
 });
 
+const handleGetChannels = asyncHandler(async (req, res) => {
+    if(!req.username){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const channels = await Subscription.find(
+        {
+            subscriber: req.username
+        }
+    );
+
+    const totalDocuments = channels.length;
+
+    return res.status(200).json(apiResponse({channels, totalDocuments}));
+});
+
+const handleUserSubscribe = asyncHandler(async (req, res) => {
+    if(!req.username){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const { channelId } = req.body;
+
+    const subscribe = await Subscription.create(
+        {
+            subscriber: req.username,
+            channel: new mongoose.Types.ObjectId(channelId)
+        }
+    );
+
+    return res.status(200).json(apiResponse(subscribe));
+});
+
+const handleDeleteSubscriber = asyncHandler(async (req, res) => {
+    if(!req.username){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const { channelId } = req.body;
+
+    const sub = await Subscription.findOne({
+        subscriber: req.username,
+        channel: new mongoose.Types.ObjectId(channelId)
+    });
+
+    if (!sub) {
+        throw createError(401, 'Unauthorized');
+    }
+    
+    await Subscription.deleteOne(
+        {
+            _id: sub._id
+        }
+    );
+
+    return res.status(200).json(apiResponse('Unsubscribed successfully'));
+});
+
 export {
-    handleGetSubscribers
+    handleGetSubscribers,
+    handleGetChannels,
+    handleUserSubscribe,
+    handleDeleteSubscriber
 }
