@@ -161,10 +161,35 @@ const handleGetVideoPage = asyncHandler(async (req, res) => {
     return res.status(200).json(apiResponse({'videos': videos}));
 });
 
+const handleGetUserVideo = asyncHandler(async (req, res) => {
+    if(!req.user){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const {limit = 20, cursor} = req.query;
+
+    const size = Math.min(Number(limit) || 20, 100);
+
+    const queryCondition = cursor
+    ? { createdAt: { $lt: cursor }, owner: req.user }
+    : { owner: req.user };
+    
+    // Fetch data sorted by creation time
+    const videos = await Video.find(queryCondition)
+    .sort({ createdAt: -1 })
+    .limit(size);
+
+    // Determine the next cursor
+    const nextCursor = videos.length > 0 ? videos[videos.length - 1].createdAt : null;
+
+    return res.status(200).json(apiResponse({'videos': videos, 'nextCursor': nextCursor}));
+});
+
 export {
     handleVideoUpload,
     handleVideoDelete,
     handleVideoPrivate,
     handleGetVideos,
-    handleGetVideoPage
+    handleGetVideoPage,
+    handleGetUserVideo
 }

@@ -12,13 +12,14 @@ import {
     handleVideoDelete,
     handleVideoPrivate,
     handleGetVideos,
-    handleGetVideoPage
+    handleGetVideoPage,
+    handleGetUserVideo
 } from '../controllers/video.controller.js';
 
 const router = Router();
 
 //at /api/v1/video
-
+//For logged in user
 router.route('/upload').post(
     authUser,
     upload.fields([
@@ -47,6 +48,12 @@ router.route('/private').patch(
     handleVideoPrivate
 );
 
+router.route('/user/get').get(
+    authUser,
+    handleGetUserVideo
+)
+
+//For all users
 //With cursor
 router.route('/get').get(
     handleGetVideos
