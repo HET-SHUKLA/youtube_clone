@@ -4,6 +4,7 @@ import { createError } from "../utils/apiError.js";
 import { apiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteFile, uploadFile } from '../utils/cloudinary.js';
+import { VIDEO_FILTER_ENUM } from "../constants.js";
 
 const handleVideoUpload = asyncHandler(async (req, res) => {
     if(!req.user){
@@ -47,7 +48,7 @@ const handleVideoPrivate = asyncHandler( async (req, res) => {
     
     const video = await Video.findOne({
         _id: videoId,
-        owner: new mongoose.Types.ObjectId(req.user),
+        owner: req.user,
     });
     
     if (!video) {
@@ -69,7 +70,7 @@ const handleVideoDelete = asyncHandler( async (req, res) => {
     
     const video = await Video.findOne({
         _id: videoId,
-        owner: new mongoose.Types.ObjectId(req.user),
+        owner: req.user,
     });
 
     if (!video) {
@@ -88,35 +89,44 @@ const handleVideoDelete = asyncHandler( async (req, res) => {
     return res.status(200).json(apiResponse('Data Deleted successfully'));
 });
 
-const handleGetVideos = asyncHandler( async (req, res) => {
-    const {limit = 20, cursor, userId} = req.query;
+const handleGetVideos = asyncHandler(async (req, res) => {
+    const {page = 1, limit = 20} = req.query;
+
+    //Validating inputs
+    if(isNaN(page) || page < 1){
+        throw createError(400, 'Page must be a valid number');
+    }
 
     const size = Math.min(Number(limit) || 20, 100);
+    const skip = Number((page-1)*size);
 
-    let queryCondition;
-    if(userId){
-        queryCondition = cursor
-        ? { createdAt: { $lt: cursor }, isPrivate: false, owner: new mongoose.Types.ObjectId(userId) }
-        : { isPrivate: false, owner: new mongoose.Types.ObjectId(userId) };
-    } else{
-        queryCondition = cursor
-        ? { createdAt: { $lt: cursor }, isPrivate: false }
-        : { isPrivate: false };
-    }
-    
-    // Fetch data sorted by creation time
-    const videos = await Video.find(queryCondition)
-    .sort({ createdAt: -1 })
+    //Query
+    const videos = await Video.find({
+        isPrivate: false
+    }).sort({createdAt: -1})
+    .skip(skip)
     .limit(size);
-
-    // Determine the next cursor
-    const nextCursor = videos.length > 0 ? videos[videos.length - 1].createdAt : null;
-
-    return res.status(200).json(apiResponse({'videos': videos, 'nextCursor': nextCursor}));
+    
+    const totalVideos = videos.length;
+    
+    return res.status(200).json(apiResponse({videos, totalVideos}));
 });
 
-const handleGetVideoPage = asyncHandler(async (req, res) => {
-    const {page = 1, limit = 20, userId} = req.query;
+const handleGetUserVideo = asyncHandler(async (req, res) => {
+    if(!req.user){
+        throw createError(401, 'Unauthorized');
+    }
+
+    const {page = 1, limit = 20, filter = 'createdAt', ascending = false} = req.query;
+
+    //Validating inputs
+    if(!VIDEO_FILTER_ENUM.includes(filter)){
+        throw createError(400, `Filter can only contains these values : ${VIDEO_FILTER_ENUM.join(', ')}`);
+    }
+
+    if(!Boolean(ascending)){
+        throw createError(400, 'ascending can only be true or false');
+    }
 
     if(isNaN(page) || page < 1){
         throw createError(400, 'Page must be a valid number');
@@ -125,64 +135,18 @@ const handleGetVideoPage = asyncHandler(async (req, res) => {
     const size = Math.min(Number(limit) || 20, 100);
     const skip = Number((page-1)*size);
 
-    let videos;
-    if(userId){
-        videos = await Video.aggregate([
-            {
-                $match: {isPrivate: false, owner: new mongoose.Types.ObjectId(userId)}
-            },
-            {
-                $sort: {createdAt: -1}
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: size
-            },
-        ]);
-    }else{
-        videos = await Video.aggregate([
-            {
-                $match: {isPrivate: false}
-            },
-            {
-                $sort: {createdAt: -1}
-            },
-            {
-                $skip: skip
-            },
-            {
-                $limit: size
-            },
-        ]);
-    }
-    
-    return res.status(200).json(apiResponse({'videos': videos}));
-});
+    //Query
+    const order = ascending ? 1 : -1;
 
-const handleGetUserVideo = asyncHandler(async (req, res) => {
-    if(!req.user){
-        throw createError(401, 'Unauthorized');
-    }
-
-    const {limit = 20, cursor} = req.query;
-
-    const size = Math.min(Number(limit) || 20, 100);
-
-    const queryCondition = cursor
-    ? { createdAt: { $lt: cursor }, owner: req.user }
-    : { owner: req.user };
-    
-    // Fetch data sorted by creation time
-    const videos = await Video.find(queryCondition)
-    .sort({ createdAt: -1 })
+    const videos = await Video.find({
+        owner: req.user
+    }).sort({[filter] : order})
+    .skip(skip)
     .limit(size);
 
-    // Determine the next cursor
-    const nextCursor = videos.length > 0 ? videos[videos.length - 1].createdAt : null;
+    const totalDocuments = videos.length;
 
-    return res.status(200).json(apiResponse({'videos': videos, 'nextCursor': nextCursor}));
+    return res.status(200).json(apiResponse({videos, totalDocuments}));
 });
 
 export {
@@ -190,6 +154,5 @@ export {
     handleVideoDelete,
     handleVideoPrivate,
     handleGetVideos,
-    handleGetVideoPage,
     handleGetUserVideo
 }

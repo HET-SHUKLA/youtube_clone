@@ -12,7 +12,6 @@ import {
     handleVideoDelete,
     handleVideoPrivate,
     handleGetVideos,
-    handleGetVideoPage,
     handleGetUserVideo
 } from '../controllers/video.controller.js';
 
@@ -54,14 +53,8 @@ router.route('/user/get').get(
 )
 
 //For all users
-//With cursor
 router.route('/get').get(
     handleGetVideos
 );
-
-//With pagination
-router.route('/get/pages').get(
-    handleGetVideoPage
-)
 
 export default router;

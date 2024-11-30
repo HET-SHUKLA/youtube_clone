@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema(
             type: String
         },
 
+        subscribers: {
+            type: Number,
+            default: 0
+        },
+
         watchHistory: [
             {
                 type: mongoose.Schema.Types.ObjectId,
