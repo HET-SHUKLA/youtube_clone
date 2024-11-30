@@ -89,14 +89,21 @@ const handleVideoDelete = asyncHandler( async (req, res) => {
 });
 
 const handleGetVideos = asyncHandler( async (req, res) => {
-    const {limit = 20, cursor} = req.query;
+    const {limit = 20, cursor, userId} = req.query;
 
     const size = Math.min(Number(limit) || 20, 100);
 
-    const queryCondition = cursor
-    ? { createdAt: { $lt: cursor } }
-    : {};
-
+    let queryCondition;
+    if(userId){
+        queryCondition = cursor
+        ? { createdAt: { $lt: cursor }, isPrivate: false, owner: new mongoose.Types.ObjectId(userId) }
+        : { isPrivate: false, owner: new mongoose.Types.ObjectId(userId) };
+    } else{
+        queryCondition = cursor
+        ? { createdAt: { $lt: cursor }, isPrivate: false }
+        : { isPrivate: false };
+    }
+    
     // Fetch data sorted by creation time
     const videos = await Video.find(queryCondition)
     .sort({ createdAt: -1 })
@@ -109,7 +116,7 @@ const handleGetVideos = asyncHandler( async (req, res) => {
 });
 
 const handleGetVideoPage = asyncHandler(async (req, res) => {
-    const {page = 1, limit = 20} = req.query;
+    const {page = 1, limit = 20, userId} = req.query;
 
     if(isNaN(page) || page < 1){
         throw createError(400, 'Page must be a valid number');
@@ -118,18 +125,39 @@ const handleGetVideoPage = asyncHandler(async (req, res) => {
     const size = Math.min(Number(limit) || 20, 100);
     const skip = Number((page-1)*size);
 
-    const videos = await Video.aggregate([
-        {
-            $sort: {createdAt: -1}
-        },
-        {
-            $skip: skip
-        },
-        {
-            $limit: size
-        },
-    ])
-
+    let videos;
+    if(userId){
+        videos = await Video.aggregate([
+            {
+                $match: {isPrivate: false, owner: new mongoose.Types.ObjectId(userId)}
+            },
+            {
+                $sort: {createdAt: -1}
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: size
+            },
+        ]);
+    }else{
+        videos = await Video.aggregate([
+            {
+                $match: {isPrivate: false}
+            },
+            {
+                $sort: {createdAt: -1}
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: size
+            },
+        ]);
+    }
+    
     return res.status(200).json(apiResponse({'videos': videos}));
 });
 
